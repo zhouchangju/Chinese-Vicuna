@@ -39,12 +39,14 @@ if not args.wandb:
     os.environ["WANDB_MODE"] = "disable"
 # optimized for RTX 4090. for larger GPUs, increase some of these?
 MICRO_BATCH_SIZE = 4  # this could actually be 5 but i like powers of 2
-BATCH_SIZE = 128
+# 避免爆显存
+BATCH_SIZE = 64
 MAX_STEPS = None
 GRADIENT_ACCUMULATION_STEPS = BATCH_SIZE // MICRO_BATCH_SIZE
 EPOCHS = 3  # we don't always need 3 tbh
 LEARNING_RATE = 3e-4  # the Karpathy constant
-CUTOFF_LEN = 256  # 256 accounts for about 96% of the data
+# 避免返回结果的token长度不足，导致代码只返回一部分
+CUTOFF_LEN = 1024  # 256 accounts for about 96% of the data
 LORA_R = 8
 LORA_ALPHA = 16
 LORA_DROPOUT = 0.05
@@ -93,6 +95,7 @@ tokenizer.pad_token_id = 0  # unk. we want this to be different from the eos tok
 #tokenizer.padding_side = "left"  # Allow batched inference
 
 data = load_dataset("json", data_files=DATA_PATH)
+
 
 now_max_steps = max((len(data["train"]) - VAL_SET_SIZE) // BATCH_SIZE * EPOCHS, EPOCHS)
 if args.resume_from_checkpoint:

@@ -54,16 +54,21 @@ except:
 if device == "cuda":
     model = LlamaForCausalLM.from_pretrained(
         BASE_MODEL,
-        #load_in_8bit=LOAD_8BIT,
+		# 模型默认是用8bit训练的，必须传入该参数
+        load_in_8bit=LOAD_8BIT,
         torch_dtype=torch.float16,
-        device_map="auto", #device_map={"": 0},
+        device_map="auto", 
+        # device_map={"": 0},
     )
     model = StreamPeftGenerationMixin.from_pretrained(
-        model, LORA_WEIGHTS, torch_dtype=torch.float16, device_map="auto", #device_map={"": 0}
+        model, LORA_WEIGHTS, torch_dtype=torch.float16, 
+        device_map="auto", 
+        #device_map={"": 0}
     )
 elif device == "mps":
     model = LlamaForCausalLM.from_pretrained(
         BASE_MODEL,
+        load_in_8bit=LOAD_8BIT,
         device_map={"": device},
         torch_dtype=torch.float16,
     )
@@ -72,6 +77,7 @@ elif device == "mps":
         LORA_WEIGHTS,
         device_map={"": device},
         torch_dtype=torch.float16,
+        load_in_8bit=LOAD_8BIT,
     )
 else:
     model = LlamaForCausalLM.from_pretrained(
@@ -106,6 +112,7 @@ def generate_prompt(instruction, input=None):
 
 if not LOAD_8BIT:
     model.half()  # seems to fix bugs for some users.
+
 
 model.eval()
 if torch.__version__ >= "2" and sys.platform != "win32":
@@ -198,4 +205,4 @@ gr.Interface(
     ],
     title="Chinese-Vicuna 中文小羊驼",
     description="中文小羊驼由各种高质量的开源instruction数据集，结合Alpaca-lora的代码训练而来，模型基于开源的llama7B，主要贡献是对应的lora模型。由于代码训练资源要求较小，希望为llama中文lora社区做一份贡献。",
-).queue().launch(share=True)
+).queue().launch(share=True, server_port=6006)
